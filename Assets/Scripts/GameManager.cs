@@ -35,6 +35,7 @@ public class GameManager : MonoBehaviour
     float gameTime;
     bool timerRunning;
     float scaredTimeLeft;
+    int ghostCombo;
     GhostController[] ghostCtrls;
     bool gameOver;
 
@@ -147,6 +148,7 @@ public class GameManager : MonoBehaviour
     void StartScared()
     {
         scaredTimeLeft = 10f;
+        ghostCombo = 0;
         scaredText.gameObject.SetActive(true);
         SetGhostMode(GhostController.Mode.Scared);
         if (music.clip != scaredMusic)
@@ -182,7 +184,10 @@ public class GameManager : MonoBehaviour
 
             if (ghost.mode == GhostController.Mode.Scared || ghost.mode == GhostController.Mode.Recovering)
             {
-                score += 300;
+                ghostCombo++;
+                int points = 300 * ghostCombo;
+                score += points;
+                StartCoroutine(ShowComboPopup(ghost.transform.position, points));
                 UpdateScore();
                 sfx.PlayOneShot(eatGhostClip);
                 ghost.Die();
@@ -193,6 +198,33 @@ public class GameManager : MonoBehaviour
                 return;
             }
         }
+    }
+
+    // Design innovation: each ghost eaten in the same scared period is worth more
+    // (300, 600, 900, 1200), shown as a popup that rises from the eaten ghost.
+    IEnumerator ShowComboPopup(Vector3 worldPosition, int points)
+    {
+        GameObject popup = new GameObject("ComboPopup", typeof(RectTransform), typeof(Text), typeof(Outline));
+        popup.transform.SetParent(scoreText.canvas.transform, false);
+        Text text = popup.GetComponent<Text>();
+        text.font = scoreText.font;
+        text.fontSize = 48;
+        text.fontStyle = FontStyle.Bold;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        text.color = new Color(1f, 0.85f, 0.2f);
+        text.text = "x" + ghostCombo + "  +" + points;
+        RectTransform rt = popup.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(400, 80);
+
+        Vector3 start = Camera.main.WorldToScreenPoint(worldPosition);
+        for (float t = 0f; t < 1f; t += Time.deltaTime)
+        {
+            rt.position = start + Vector3.up * 80f * t;
+            text.color = new Color(1f, 0.85f, 0.2f, 1f - t);
+            yield return null;
+        }
+        Destroy(popup);
     }
 
     IEnumerator PacDies()
