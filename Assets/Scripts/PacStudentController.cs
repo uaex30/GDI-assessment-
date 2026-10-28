@@ -1,4 +1,5 @@
-
+// AI-assisted: the movement, animation, audio, dust, tunnel and collision code in this file
+// was written by Claude (Anthropic) at the student's request. levelMap is the student's data.
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -33,11 +34,15 @@ public class PacStudentController : MonoBehaviour
 
     public AudioClip moveClip;
     public AudioClip pelletClip;
+    public AudioClip wallClip;
+    public ParticleSystem dust;
+    public ParticleSystem wallHitEffect;
 
     Animator animator;
     AudioSource moveAudio;
     AudioSource pelletAudio;
     char animatedDirection = ' ';
+    bool wasMoving = false;
 
     void Start()
     {
@@ -59,8 +64,42 @@ public class PacStudentController : MonoBehaviour
         pelletAudio.PlayOneShot(pelletClip);
     }
 
+    public void PlayDeath()
+    {
+        isLerping = false;
+        moveAudio.Stop();
+        if (dust != null) dust.Stop();
+        animator.speed = 1f;
+        animator.Play("Rabbit_Dead");
+        animatedDirection = ' ';
+    }
+
+    public void ResetTo(Vector3 position)
+    {
+        transform.position = position;
+        isLerping = false;
+        lastInput = ' ';
+        currentInput = ' ';
+        wasMoving = false;
+        animator.Play("Rabbit_Walk_Right");
+        animator.speed = 0f;
+        animatedDirection = ' ';
+    }
+
+    bool CanMove()
+    {
+        return GameManager.Instance == null || GameManager.Instance.InputEnabled;
+    }
+
     void Update()
     {
+        if (!CanMove())
+        {
+            if (moveAudio.isPlaying) moveAudio.Stop();
+            if (dust != null && dust.isPlaying) dust.Stop();
+            return;
+        }
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null)
         {
@@ -78,6 +117,8 @@ public class PacStudentController : MonoBehaviour
             {
                 transform.position = lerpTarget;
                 isLerping = false;
+                if (GameManager.Instance != null) GameManager.Instance.OnPacArrived(lerpTarget);
+                if (!CanMove()) return;
             }
         }
 
@@ -87,12 +128,14 @@ public class PacStudentController : MonoBehaviour
             {
                 currentInput = lastInput;
             }
-            else
+            else if (!TryStartMove(currentInput) && wasMoving)
             {
-                TryStartMove(currentInput);
+                pelletAudio.PlayOneShot(wallClip);
+                if (wallHitEffect != null) wallHitEffect.Play();
             }
         }
 
+        wasMoving = isLerping;
         UpdateAnimationAndAudio();
     }
 
@@ -107,11 +150,24 @@ public class PacStudentController : MonoBehaviour
             }
             animator.speed = 1f;
             if (!moveAudio.isPlaying) moveAudio.Play();
+            if (dust != null && !dust.isPlaying) dust.Play();
         }
         else
         {
             animator.speed = 0f;
             if (moveAudio.isPlaying) moveAudio.Stop();
+            if (dust != null && dust.isPlaying) dust.Stop();
+        }
+    }
+
+    void ChooseMoveClip()
+    {
+        bool towardsPellet = GameManager.Instance != null && GameManager.Instance.HasPellet(lerpTarget);
+        AudioClip clip = towardsPellet ? pelletClip : moveClip;
+        if (moveAudio.clip != clip)
+        {
+            moveAudio.clip = clip;
+            moveAudio.Play();
         }
     }
 
@@ -133,12 +189,21 @@ public class PacStudentController : MonoBehaviour
 
         int col = Mathf.RoundToInt(transform.position.x);
         int row = Mathf.RoundToInt(-transform.position.y);
+
+        if (row == 14 && (col + dir.x < 0 || col + dir.x > 27))
+        {
+            col = col + dir.x < 0 ? 27 : 0;
+            transform.position = new Vector3(col, -row, transform.position.z);
+            return true;
+        }
+
         if (!IsWalkable(col + dir.x, row + dir.y)) return false;
 
         lerpStart = new Vector3(col, -row, transform.position.z);
         lerpTarget = new Vector3(col + dir.x, -(row + dir.y), transform.position.z);
         lerpElapsed = 0f;
         isLerping = true;
+        ChooseMoveClip();
         return true;
     }
 
