@@ -34270,6 +34270,7 @@ GameObject:
   - component: {fileID: 1690970086}
   - component: {fileID: 1690970085}
   - component: {fileID: 1690970089}
+  - component: {fileID: 1690970090}
   m_Layer: 0
   m_Name: PacStudent
   m_TagString: Untagged
@@ -34470,6 +34471,20 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1690970090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690970084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5a174fbb4edf2a49bcfbfde0e652468, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PacStudentController
+  moveClip: {fileID: 8300000, guid: 590a6a4e74f6ed24f81bf7575f26b33c, type: 3}
+  pelletClip: {fileID: 8300000, guid: 67637dfa45291b24eabd2c9bde9a5161, type: 3}
 --- !u!1001 &1691188527
 PrefabInstance:
   m_ObjectHideFlags: 0
