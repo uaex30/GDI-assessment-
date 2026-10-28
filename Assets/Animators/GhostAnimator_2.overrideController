@@ -8,4 +8,12 @@ AnimatorOverrideController:
   m_PrefabAsset: {fileID: 0}
   m_Name: GhostAnimator_2
   m_Controller: {fileID: 9100000, guid: 1b22c799ed82f5342ac3bd6a44f7c5b4, type: 2}
-  m_Clips: []
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: ef0fc00223f8d1b42b768cb1b4cc0463, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: fcbc5c1a13ab72b41818262eafe2aa0d, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: c6b4414cf4682ef45846af2dd302cb20, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 187d5be130022894a8002723a508ba47, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 0cead357c54a7e146847ba44d809bd8e, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: e5256a58e61bb384b927f82ece3e3c87, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: ad13d918cc1653047a52ea74be1a669d, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 36450e1fb07fc6645b77a648f692206f, type: 2}
