@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
     float gameTime;
     bool timerRunning;
     float scaredTimeLeft;
-    bool[] ghostDead;
+    GhostController[] ghostCtrls;
     bool gameOver;
 
     void Awake()
@@ -45,7 +45,14 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        ghostDead = new bool[ghosts.Length];
+        ghostCtrls = new GhostController[ghosts.Length];
+        for (int i = 0; i < ghosts.Length; i++)
+        {
+            ghostCtrls[i] = ghosts[i].gameObject.AddComponent<GhostController>();
+            ghostCtrls[i].behaviour = i + 1;
+            ghostCtrls[i].pac = pac;
+            ghostCtrls[i].spawn = ghosts[i].transform.position;
+        }
         foreach (Transform t in GameObject.Find("Level").GetComponentsInChildren<Transform>())
         {
             if (t.name.StartsWith("Pellet") || t.name.StartsWith("PowerPellet"))
@@ -104,7 +111,7 @@ public class GameManager : MonoBehaviour
             scaredTimeLeft -= Time.deltaTime;
             scaredText.text = "Scared: " + Mathf.CeilToInt(Mathf.Max(scaredTimeLeft, 0f));
             if (scaredTimeLeft <= 3f && scaredTimeLeft + Time.deltaTime > 3f)
-                SetAliveGhostsState("Dog1_Recovering");
+                SetGhostMode(GhostController.Mode.Recovering);
             if (scaredTimeLeft <= 0f) EndScared();
         }
 
@@ -141,7 +148,7 @@ public class GameManager : MonoBehaviour
     {
         scaredTimeLeft = 10f;
         scaredText.gameObject.SetActive(true);
-        SetAliveGhostsState("Dog1_Scared_Down");
+        SetGhostMode(GhostController.Mode.Scared);
         if (music.clip != scaredMusic)
         {
             music.clip = scaredMusic;
@@ -154,31 +161,31 @@ public class GameManager : MonoBehaviour
     {
         scaredTimeLeft = 0f;
         scaredText.gameObject.SetActive(false);
-        SetAliveGhostsState("Dog1_Walk_Down");
+        SetGhostMode(GhostController.Mode.Normal);
         music.clip = normalMusic;
         music.loop = true;
         music.Play();
     }
 
-    void SetAliveGhostsState(string state)
+    void SetGhostMode(GhostController.Mode mode)
     {
-        for (int i = 0; i < ghosts.Length; i++)
-            if (!ghostDead[i]) ghosts[i].Play(state);
+        foreach (GhostController ghost in ghostCtrls)
+            if (!ghost.IsDead) ghost.mode = mode;
     }
 
     void CheckGhostCollisions()
     {
-        for (int i = 0; i < ghosts.Length; i++)
+        foreach (GhostController ghost in ghostCtrls)
         {
-            if (ghostDead[i]) continue;
-            if (Vector2.Distance(ghosts[i].transform.position, pac.transform.position) > 0.6f) continue;
+            if (ghost.IsDead) continue;
+            if (Vector2.Distance(ghost.transform.position, pac.transform.position) > 0.6f) continue;
 
-            if (scaredTimeLeft > 0f)
+            if (ghost.mode == GhostController.Mode.Scared || ghost.mode == GhostController.Mode.Recovering)
             {
                 score += 300;
                 UpdateScore();
                 sfx.PlayOneShot(eatGhostClip);
-                StartCoroutine(GhostDead(i));
+                ghost.Die();
             }
             else
             {
@@ -186,15 +193,6 @@ public class GameManager : MonoBehaviour
                 return;
             }
         }
-    }
-
-    IEnumerator GhostDead(int i)
-    {
-        ghostDead[i] = true;
-        ghosts[i].Play("Dog1_Dead");
-        yield return new WaitForSeconds(5f);
-        ghostDead[i] = false;
-        ghosts[i].Play(scaredTimeLeft > 3f ? "Dog1_Scared_Down" : scaredTimeLeft > 0f ? "Dog1_Recovering" : "Dog1_Walk_Down");
     }
 
     IEnumerator PacDies()
@@ -213,6 +211,7 @@ public class GameManager : MonoBehaviour
             yield break;
         }
         pac.ResetTo(pacSpawn);
+        foreach (GhostController ghost in ghostCtrls) ghost.ResetToSpawn();
         StartCoroutine(RoundStart());
     }
 

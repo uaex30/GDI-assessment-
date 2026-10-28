@@ -219,6 +219,11 @@ public class PacStudentController : MonoBehaviour
         }
     }
 
+    public bool IsWalkableTile(int col, int row)
+    {
+        return IsWalkable(col, row);
+    }
+
     bool IsWalkable(int col, int row)
     {
         if (col > 13) col = 27 - col;
